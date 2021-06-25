@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.res.Configuration
 import android.net.wifi.WifiManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.hsc.quupa.data.model.quupa.position.Tag
 import com.hsc.quupa.data.model.quupa.qda.QdaPositionResponse
 import com.hsc.quupa.data.network.QuupaClient
+import com.hsc.quupa.listener.OnWifiChanged
 import com.hsc.quupa.utilities.*
 import com.qozix.tileview.TileView
 import io.reactivex.disposables.Disposable
@@ -23,12 +22,11 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.layout_response.view.*
 import kotlinx.android.synthetic.main.tag_marker.view.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), OnWifiChanged {
 
     private lateinit var tagViewList: HashMap<String, View>
     private lateinit var tileView: TileView
     private lateinit var imgMapPath: String
-    private lateinit var mainHandler: Handler
     private lateinit var userData: UserPreference
     lateinit var availableTags: String
     lateinit var dataAddress: String
@@ -43,25 +41,16 @@ class MainActivity : AppCompatActivity() {
     var timeDelay: Long = 1000
     var disposable: Disposable? = null
 
-    private val checkIPAddress = object: Runnable {
-        override fun run() {
-            dataAddress = getIpAddress()
-            detailText.text = "You're connected to $dataAddress"
-            mainHandler.postDelayed(this, 1000)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        WifiReceiver.bindListener(this)
         isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         tagViewList = HashMap()
         userData = UserPreference(this)
         initializeIpAddress()
         setupView()
         availableTags = "a1a110500104"
-
-        mainHandler = Handler(Looper.getMainLooper())
 
         textRequest.setOnClickListener {
             showDialogResponse()
@@ -177,14 +166,14 @@ class MainActivity : AppCompatActivity() {
             if (tagViewList.contains(tag.id)) {
                 tileView.moveMarker(
                     tagViewList[tag.id],
-                    tag.smoothedPosition[0] * 10,
-                    tag.smoothedPosition[1] * 10
+                    tag.smoothedPosition[0],
+                    tag.smoothedPosition[1]
                 )
             } else {
                 tagViewList[tag.id] = addTagMarker(
                     tag.id,
-                    tag.smoothedPosition[0] * 10,
-                    tag.smoothedPosition[1] * 10
+                    tag.smoothedPosition[0],
+                    tag.smoothedPosition[1]
                 )
             }
         }
@@ -197,14 +186,14 @@ class MainActivity : AppCompatActivity() {
             if (tagViewList.contains(tag.id)) {
                 tileView.moveMarker(
                     tagViewList[tag.id],
-                    tag.smoothedPositionX * 10,
-                    tag.smoothedPositionY * 10
+                    tag.smoothedPositionX,
+                    tag.smoothedPositionY
                 )
             } else {
                 tagViewList[tag.id] = addTagMarker(
                     tag.id,
-                    tag.smoothedPositionX * 10,
-                    tag.smoothedPositionY * 10
+                    tag.smoothedPositionX,
+                    tag.smoothedPositionY
                 )
             }
         }
@@ -224,6 +213,10 @@ class MainActivity : AppCompatActivity() {
             layoutManager = linearLayoutManager
             adapter = adapterResponse
         }
+        builder.setNeutralButton("Open Folder") { dialog, _ ->
+            dialog.dismiss()
+            ResponseWriter.openResponseFolder(this)
+        }
         builder.setPositiveButton("Clear") { dialog, _ ->
             dataResponse.clear()
             adapterResponse.clear()
@@ -233,18 +226,6 @@ class MainActivity : AppCompatActivity() {
         adapterResponse.addResponse(dataResponse)
         builder.create()
         builder.show()
-    }
-
-    private fun getIpAddress(): String {
-        val ipAddress = userData.getIP(UserPreference.IP_ADDRESS).toString()
-
-        return if (QuupaClient.QDA_URL.contains(ipAddress)) {
-            mode = 1
-            QuupaClient.QDA_URL
-        } else {
-            mode = 0
-            QuupaClient.QPA_URL
-        }
     }
 
     private fun initializeIpAddress() {
@@ -257,14 +238,16 @@ class MainActivity : AppCompatActivity() {
             ip shr 8 and 0xff,
             ip shr 16 and 0xff
         )
-        userData.setIP(ipAddress)
-        if ("192.168.1.10".contains(ipAddress)) {
+        if (QuupaClient.QDA_URL.contains(ipAddress)) {
             mode = 1
+            dataAddress = QuupaClient.QDA_URL
             QuupaClient.QDA_URL
         } else {
             mode = 0
+            dataAddress = QuupaClient.QPA_URL
             QuupaClient.QPA_URL
         }
+        detailText.text = "You're connected to $dataAddress"
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -277,13 +260,19 @@ class MainActivity : AppCompatActivity() {
         setupView()
     }
 
-    override fun onResume() {
-        super.onResume()
-        mainHandler.post(checkIPAddress)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        mainHandler.removeCallbacks(checkIPAddress)
+    override fun onWifiChanged(ipAddress: String) {
+        if (QuupaClient.QDA_URL.contains(ipAddress)) {
+            mode = 1
+            dataAddress = QuupaClient.QDA_URL
+            QuupaClient.QDA_URL
+        } else {
+            mode = 0
+            dataAddress = QuupaClient.QPA_URL
+            QuupaClient.QPA_URL
+        }
+        commandBtn.setBackgroundResource(R.drawable.ic_start)
+        detailText.text = "You're connected to $dataAddress"
+        disposable?.dispose()
+        isRunning = false
     }
 }

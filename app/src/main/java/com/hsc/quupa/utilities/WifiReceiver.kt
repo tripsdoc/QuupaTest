@@ -6,10 +6,18 @@ import android.content.Context
 import android.content.Intent
 import android.net.NetworkInfo
 import android.net.wifi.WifiManager
+import com.hsc.quupa.listener.OnWifiChanged
 
 class WifiReceiver: BroadcastReceiver() {
 
     private lateinit var userData: UserPreference
+
+    companion object {
+        private lateinit var listener: OnWifiChanged
+        fun bindListener(listener: OnWifiChanged) {
+            this.listener = listener
+        }
+    }
 
     @SuppressLint("UnsafeProtectedBroadcastReceiver")
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -27,6 +35,7 @@ class WifiReceiver: BroadcastReceiver() {
             )
 
             userData.setIP(ipAddress)
+            listener.onWifiChanged(ipAddress)
         }
     }
 }

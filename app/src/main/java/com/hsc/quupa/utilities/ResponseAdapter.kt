@@ -15,7 +15,7 @@ class ResponseAdapter(): RecyclerView.Adapter<ResponseAdapter.ViewHolder>() {
     inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         @SuppressLint("SetTextI18n")
         fun setView(position: Int) {
-            itemView.textResponse.text = "${responseList[position]} ms"
+            itemView.textResponse.text = responseList[position]
         }
     }
 

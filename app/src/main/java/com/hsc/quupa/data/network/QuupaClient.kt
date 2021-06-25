@@ -8,13 +8,12 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.*
 
 class QuupaClient(private val url: String) {
 
     companion object {
         const val QPA_URL = "http://192.168.40.100:8080/qpe/"
-        const val QDA_URL = "http://192.168.16.121:8080/qpe/"
+        const val QDA_URL = "http://192.168.14.147:9440/qda/"
     }
 
     private var retrofit: Retrofit? = null

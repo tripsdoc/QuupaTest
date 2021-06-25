@@ -9,6 +9,8 @@ import com.hsc.quupa.data.network.QuupaClient
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 class QuupaDataAggregator(context: Context) {
@@ -62,6 +64,15 @@ class QuupaDataAggregator(context: Context) {
 
     private fun stopTimer() {
         val diff = System.currentTimeMillis() - timerNow
-        activity.dataResponse.add("$diff")
+        val response = "Start at : ${getDate(timerNow)}, End at : ${getDate(System.currentTimeMillis())}  (${diff}ms)"
+        ResponseWriter.writeResponse(response)
+        activity.dataResponse.add(response)
+    }
+
+    private fun getDate(time:Long):String {
+        val date = Date(time)
+        val sdf = SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss.SSS", Locale.US)
+
+        return sdf.format(date);
     }
 }
