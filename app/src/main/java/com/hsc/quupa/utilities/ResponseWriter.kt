@@ -10,6 +10,19 @@ import java.io.FileWriter
 
 class ResponseWriter {
     companion object {
+        fun newResponse() {
+            try {
+                val fileName = Environment.getExternalStorageDirectory()
+                    .absolutePath + "/response.txt"
+                val file = File(fileName)
+                if (file.exists()) {
+                    file.delete()
+                }
+            } catch (e: Exception) {
+                Log.d("Error", e.localizedMessage!!.toString())
+            }
+        }
+
         fun writeResponse(response: String) {
             try {
                 val fileName = Environment.getExternalStorageDirectory()

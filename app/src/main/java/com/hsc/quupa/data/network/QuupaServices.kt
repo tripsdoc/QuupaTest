@@ -7,7 +7,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface QuupaServices {
-    @GET("getTagPosition?version=2&humanReadable=true&ignoreUnknownTags=true&maxAge=900000000")
+    @GET("getTagData?version=2&humanReadable=true&ignoreUnknownTags=true&maxAge=900000000")
     fun getTagPosition(
         @Query("tag") tags: String
     ): Observable<TagPositionResponse>

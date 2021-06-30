@@ -5,9 +5,14 @@ import android.content.Context
 import android.content.res.Configuration
 import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -27,12 +32,16 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
     private lateinit var tagViewList: HashMap<String, View>
     private lateinit var tileView: TileView
     private lateinit var imgMapPath: String
+    private lateinit var connectedText: String
     private lateinit var userData: UserPreference
+    private lateinit var mainHandler: Handler
     lateinit var availableTags: String
     lateinit var dataAddress: String
+    private var mapText: HashMap<String, String> = HashMap()
     private var isRunning = false
     private var isLandscape = false
     private var mode: Int = 0
+    private var isShownTag = false
     var dataResponse: ArrayList<String> = ArrayList()
     var r = 0
     var l1 = 0
@@ -41,34 +50,61 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
     var timeDelay: Long = 1000
     var disposable: Disposable? = null
 
+    private var changeText = object: Runnable {
+        override fun run() {
+            if (isShownTag) {
+                detailText.setText(mapText["Connected"])
+            } else {
+                detailText.setText(mapText["Tag"])
+            }
+            Log.d("Data", "Running")
+            isShownTag = !isShownTag
+            mainHandler.postDelayed(this, 1000 * 5)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        mainHandler = Handler(Looper.getMainLooper())
         WifiReceiver.bindListener(this)
         isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         tagViewList = HashMap()
         userData = UserPreference(this)
-        initializeIpAddress()
+
+        detailText.setInAnimation(this, android.R.anim.slide_in_left)
+        detailText.setOutAnimation(this, android.R.anim.slide_out_right)
+
+        availableTags = userData.getTag(UserPreference.AVAILABLE_TAG).toString()
+
         setupView()
-        availableTags = "a1a110500104"
 
         textRequest.setOnClickListener {
             showDialogResponse()
         }
 
         commandBtn.setOnClickListener {
-            if (isRunning) {
-                commandBtn.setBackgroundResource(R.drawable.ic_start)
-                disposable?.dispose()
+            if (!::availableTags.isInitialized || availableTags == "") {
+                Toast.makeText(this, "Please set tag first!", Toast.LENGTH_SHORT).show()
             } else {
-                commandBtn.setBackgroundResource(R.drawable.ic_pause)
-                if (mode == 0) {
-                    QuupaPositioningEngine(this).observePositions()
+                if (isRunning) {
+                    commandBtn.setBackgroundResource(R.drawable.ic_start)
+                    disposable?.dispose()
                 } else {
-                    QuupaDataAggregator(this).observePositions()
+                    ResponseWriter.newResponse()
+                    commandBtn.setBackgroundResource(R.drawable.ic_pause)
+                    if (mode == 0) {
+                        QuupaPositioningEngine(this).observePositions()
+                    } else {
+                        QuupaDataAggregator(this).observePositions()
+                    }
                 }
+                isRunning = !isRunning
             }
-            isRunning = !isRunning
+        }
+
+        commandTag.setOnClickListener {
+            showEditTag()
         }
 
         addBtn.setOnClickListener {
@@ -163,17 +199,17 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
         s += 1
         updateText()
         for (tag in data) {
-            if (tagViewList.contains(tag.id)) {
+            if (tagViewList.contains(tag.tagId)) {
                 tileView.moveMarker(
-                    tagViewList[tag.id],
-                    tag.smoothedPosition[0],
-                    tag.smoothedPosition[1]
+                    tagViewList[tag.tagId],
+                    tag.location[1],
+                    tag.location[0]
                 )
             } else {
-                tagViewList[tag.id] = addTagMarker(
-                    tag.id,
-                    tag.smoothedPosition[0],
-                    tag.smoothedPosition[1]
+                tagViewList[tag.tagId] = addTagMarker(
+                    tag.tagId,
+                    tag.location[1],
+                    tag.location[0]
                 )
             }
         }
@@ -186,17 +222,39 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
             if (tagViewList.contains(tag.id)) {
                 tileView.moveMarker(
                     tagViewList[tag.id],
-                    tag.smoothedPositionX,
-                    tag.smoothedPositionY
+                    tag.smoothedPositionY,
+                    tag.smoothedPositionX
                 )
             } else {
                 tagViewList[tag.id] = addTagMarker(
                     tag.id,
-                    tag.smoothedPositionX,
-                    tag.smoothedPositionY
+                    tag.smoothedPositionY,
+                    tag.smoothedPositionX
                 )
             }
         }
+    }
+
+    private fun showEditTag() {
+        val alertDialog = AlertDialog.Builder(this)
+        alertDialog.setTitle("Tag Data")
+        val input = EditText(this)
+        val lp = LinearLayout.LayoutParams (
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+                )
+        input.setText(availableTags)
+        input.layoutParams = lp
+        alertDialog.setView(input)
+        alertDialog.setPositiveButton("OK") { _, _ ->
+            availableTags = input.text.toString()
+            mapText["Tag"] = availableTags
+            userData.setTag(availableTags)
+        }
+        alertDialog.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.cancel()
+        }
+        alertDialog.show()
     }
 
     private fun showDialogResponse() {
@@ -229,6 +287,7 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
     }
 
     private fun initializeIpAddress() {
+        val userPreference = UserPreference(this)
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val wifiInfo = wifiManager.connectionInfo
         val ip = wifiInfo.ipAddress
@@ -247,7 +306,16 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
             dataAddress = QuupaClient.QPA_URL
             QuupaClient.QPA_URL
         }
-        detailText.text = "You're connected to $dataAddress"
+        connectedText = "You're connected to $dataAddress"
+        val userTagData = userPreference.getTag(UserPreference.AVAILABLE_TAG).toString()
+        val tagData: String = if (userTagData == "") {
+            "Tag data not set"
+        } else {
+            userTagData
+        }
+        mapText["Connected"] = connectedText
+        mapText["Tag"] = tagData
+        detailText.setText(mapText["Connected"])
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -271,8 +339,22 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
             QuupaClient.QPA_URL
         }
         commandBtn.setBackgroundResource(R.drawable.ic_start)
-        detailText.text = "You're connected to $dataAddress"
+        connectedText = "You're connected to $dataAddress"
+        mapText["Connected"] = connectedText
+        detailText.setText(mapText["Connected"])
+        isShownTag = false
         disposable?.dispose()
         isRunning = false
+    }
+
+    override fun onResume() {
+        super.onResume()
+        initializeIpAddress()
+        mainHandler.post(changeText)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mainHandler.removeCallbacks(changeText)
     }
 }

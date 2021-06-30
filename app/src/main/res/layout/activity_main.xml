@@ -91,18 +91,34 @@
 
                 </androidx.appcompat.widget.Toolbar>
 
-                <ImageButton
-                    android:id="@+id/commandBtn"
+                <RelativeLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="16dp"
-                    android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                    android:background="@drawable/ic_start"
-                    android:contentDescription="Start"
+                    android:layout_marginEnd="24dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintVertical_bias="0.5" />
+                    app:layout_constraintVertical_bias="0.5">
+
+                    <ImageButton
+                        android:id="@+id/commandTag"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toStartOf="@id/commandBtn"
+                        android:layout_marginEnd="16dp"
+                        android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                        android:background="@drawable/ic_tag"/>
+
+                    <ImageButton
+                        android:id="@+id/commandBtn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                        android:background="@drawable/ic_start"
+                        android:contentDescription="Start" />
+
+                </RelativeLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -118,17 +134,30 @@
         android:layout_below="@id/barView"
         android:layout_above="@id/detailText"/>
 
-    <TextView
+    <TextSwitcher
         android:id="@+id/detailText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:gravity="center"
-        android:padding="10dp"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        android:background="@android:color/black"
-        android:text="You're connected to"/>
+        android:background="@android:color/black">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="10dp"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="10dp"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"/>
+
+    </TextSwitcher>
 
 </RelativeLayout>

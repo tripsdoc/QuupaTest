@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit
 class QuupaDataAggregator(context: Context) {
 
     private var activity: MainActivity = context as MainActivity
+    private var quupaClient = QuupaClient(activity.dataAddress)
 
     fun observePositions() {
         activity.r = 0
@@ -31,7 +32,7 @@ class QuupaDataAggregator(context: Context) {
     private fun callQpeAPI(long: Long) {
         activity.r += 1
         activity.updateText()
-        val observe: Observable<List<QdaPositionResponse>>? = QuupaClient(activity.dataAddress).getQdaPosition(
+        val observe: Observable<List<QdaPositionResponse>>? = quupaClient.getQdaPosition(
             activity.availableTags
         )
         observe?.subscribeOn(Schedulers.newThread())

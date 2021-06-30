@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit
 class QuupaPositioningEngine(context: Context) {
 
     private var activity: MainActivity = context as MainActivity
+    private var quupaClient = QuupaClient(activity.dataAddress)
 
     fun observePositions() {
         activity.r = 0
@@ -31,7 +32,7 @@ class QuupaPositioningEngine(context: Context) {
     private fun callQpeAPI(long: Long) {
         activity.r += 1
         activity.updateText()
-        val observe: Observable<TagPositionResponse>? = QuupaClient(activity.dataAddress).getTagPosition(
+        val observe: Observable<TagPositionResponse>? = quupaClient.getTagPosition(
             activity.availableTags
         )
         observe?.subscribeOn(Schedulers.newThread())

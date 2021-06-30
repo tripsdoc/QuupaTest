@@ -6,23 +6,25 @@ import android.content.SharedPreferences
 
 class UserPreference(context: Context) {
     companion object {
-        const val IP_ADDRESS = "ipAddress"
+        const val AVAILABLE_TAG = "availableTag"
         const val USER_PREF = "quupaPref"
     }
 
     private val userPref: SharedPreferences = context.getSharedPreferences(USER_PREF, Context.MODE_PRIVATE)
 
+
+
     @SuppressLint("CommitPrefEdits")
-    fun setIP(ipAddress: String) {
+    fun setTag(tag: String) {
         val editor: SharedPreferences.Editor = userPref.edit()
-        editor.putString(IP_ADDRESS, ipAddress)
+        editor.putString(AVAILABLE_TAG, tag)
         editor.apply()
     }
 
-    fun getIP(
-        IP_ADDRESS: String,
-        ipAddress: String = ""
+    fun getTag(
+        AVAILABLE_TAG: String,
+        tag: String = ""
     ): String? {
-        return userPref.getString(IP_ADDRESS, ipAddress)
+        return userPref.getString(AVAILABLE_TAG, tag)
     }
 }

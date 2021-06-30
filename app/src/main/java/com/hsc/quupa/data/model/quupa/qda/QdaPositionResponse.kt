@@ -1,11 +1,11 @@
 package com.hsc.quupa.data.model.quupa.qda
 
 data class QdaPositionResponse(
-    val responseTimestampEpoch: Int,
+    val responseTimestampEpoch: Long,
     val color: String,
     val positionTimestamp: String,
     val version: String,
-    val positionTimestampEpoch: Int,
+    val positionTimestampEpoch: Long,
     val positionX: Double,
     val positionY: Double,
     val positionZ: Double,

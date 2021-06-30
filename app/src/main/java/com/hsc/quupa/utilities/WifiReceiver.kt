@@ -34,7 +34,6 @@ class WifiReceiver: BroadcastReceiver() {
                 ip shr 16 and 0xff
             )
 
-            userData.setIP(ipAddress)
             listener.onWifiChanged(ipAddress)
         }
     }
