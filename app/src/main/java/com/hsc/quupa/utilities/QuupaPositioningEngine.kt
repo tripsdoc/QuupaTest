@@ -6,6 +6,7 @@ import android.util.Log
 import com.hsc.quupa.MainActivity
 import com.hsc.quupa.data.model.quupa.position.TagPositionResponse
 import com.hsc.quupa.data.network.QuupaClient
+import com.hsc.quupa.listener.OnFinishedSingleRequest
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -17,6 +18,13 @@ class QuupaPositioningEngine(context: Context) {
 
     private var activity: MainActivity = context as MainActivity
     private var quupaClient = QuupaClient(activity.dataAddress)
+
+    companion object {
+        private lateinit var listener: OnFinishedSingleRequest
+        fun bindListener(listener: OnFinishedSingleRequest) {
+            this.listener = listener
+        }
+    }
 
     fun observePositions() {
         activity.r = 0
@@ -37,7 +45,7 @@ class QuupaPositioningEngine(context: Context) {
         )
         observe?.subscribeOn(Schedulers.newThread())
             ?.doOnSubscribe { startTimer() }
-            ?.doFinally { stopTimer() }
+            ?.doAfterTerminate { stopTimer() }
             ?.observeOn(AndroidSchedulers.mainThread())
             ?.map { result: TagPositionResponse -> result.tags }
             ?.subscribe(activity::updatePosition, this::errorHandler)
@@ -64,9 +72,11 @@ class QuupaPositioningEngine(context: Context) {
     }
 
     private fun stopTimer() {
-        val diff = System.currentTimeMillis() - timerNow
-        val response = "Start at : ${getDate(timerNow)}, End at : ${getDate(System.currentTimeMillis())}  (${diff}ms)"
-        ResponseWriter.writeResponse(response)
+        val endTime = System.currentTimeMillis()
+        val diff = endTime - timerNow
+        listener.onFinishedSingleRequest(timerNow, endTime)
+        val response = "Start at : ${getDate(timerNow)}, End at : ${getDate(endTime)}  (${diff}ms)"
+        ResponseWriter.writeResponse(response, "response.txt")
         activity.dataResponse.add(response)
     }
 

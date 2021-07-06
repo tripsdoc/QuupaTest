@@ -37,7 +37,7 @@ class QuupaDataAggregator(context: Context) {
         )
         observe?.subscribeOn(Schedulers.newThread())
             ?.doOnSubscribe { startTimer() }
-            ?.doFinally { stopTimer() }
+            ?.doAfterTerminate { stopTimer() }
             ?.observeOn(AndroidSchedulers.mainThread())
             ?.map { result: List<QdaPositionResponse> -> result }
             ?.subscribe(activity::updateQdaPosition, this::errorHandler)
@@ -66,7 +66,7 @@ class QuupaDataAggregator(context: Context) {
     private fun stopTimer() {
         val diff = System.currentTimeMillis() - timerNow
         val response = "Start at : ${getDate(timerNow)}, End at : ${getDate(System.currentTimeMillis())}  (${diff}ms)"
-        ResponseWriter.writeResponse(response)
+        ResponseWriter.writeResponse(response, "response.txt")
         activity.dataResponse.add(response)
     }
 

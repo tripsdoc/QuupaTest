@@ -10,10 +10,10 @@ import java.io.FileWriter
 
 class ResponseWriter {
     companion object {
-        fun newResponse() {
+        fun newResponse(name: String) {
             try {
                 val fileName = Environment.getExternalStorageDirectory()
-                    .absolutePath + "/response.txt"
+                    .absolutePath + "/" + name
                 val file = File(fileName)
                 if (file.exists()) {
                     file.delete()
@@ -23,10 +23,10 @@ class ResponseWriter {
             }
         }
 
-        fun writeResponse(response: String) {
+        fun writeResponse(response: String, name: String) {
             try {
                 val fileName = Environment.getExternalStorageDirectory()
-                    .absolutePath + "/response.txt"
+                    .absolutePath + "/" + name
                 val fw = FileWriter(fileName, true)
                 fw.write(response + "\n\n")
                 fw.close()

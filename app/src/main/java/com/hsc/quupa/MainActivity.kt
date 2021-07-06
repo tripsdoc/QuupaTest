@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.hsc.quupa.data.model.quupa.position.Tag
 import com.hsc.quupa.data.model.quupa.qda.QdaPositionResponse
 import com.hsc.quupa.data.network.QuupaClient
+import com.hsc.quupa.listener.OnFinishedSingleRequest
 import com.hsc.quupa.listener.OnWifiChanged
 import com.hsc.quupa.utilities.*
 import com.qozix.tileview.TileView
@@ -27,7 +28,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.layout_response.view.*
 import kotlinx.android.synthetic.main.tag_marker.view.*
 
-class MainActivity : AppCompatActivity(), OnWifiChanged {
+class MainActivity : AppCompatActivity(), OnWifiChanged, OnFinishedSingleRequest {
 
     private lateinit var tagViewList: HashMap<String, View>
     private lateinit var tileView: TileView
@@ -49,6 +50,8 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
     var s = 0
     var timeDelay: Long = 1000
     var disposable: Disposable? = null
+    private var startTime: Long = 0
+    private var endTime: Long = 0
 
     private var changeText = object: Runnable {
         override fun run() {
@@ -91,9 +94,11 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
                     commandBtn.setBackgroundResource(R.drawable.ic_start)
                     disposable?.dispose()
                 } else {
-                    ResponseWriter.newResponse()
+                    ResponseWriter.newResponse("response.txt")
+                    ResponseWriter.newResponse("tag.txt")
                     commandBtn.setBackgroundResource(R.drawable.ic_pause)
                     if (mode == 0) {
+                        QuupaPositioningEngine.bindListener(this)
                         QuupaPositioningEngine(this).observePositions()
                     } else {
                         QuupaDataAggregator(this).observePositions()
@@ -199,6 +204,8 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
         s += 1
         updateText()
         for (tag in data) {
+            val response = "(${tag.location[0]},${tag.location[1]}) --> Start : $startTime End : $endTime Diff : ${endTime-startTime}ms"
+            ResponseWriter.writeResponse(response, "tag.txt")
             if (tagViewList.contains(tag.tagId)) {
                 tileView.moveMarker(
                     tagViewList[tag.tagId],
@@ -356,5 +363,10 @@ class MainActivity : AppCompatActivity(), OnWifiChanged {
     override fun onPause() {
         super.onPause()
         mainHandler.removeCallbacks(changeText)
+    }
+
+    override fun onFinishedSingleRequest(start: Long, end: Long) {
+        startTime = start
+        endTime = end
     }
 }
